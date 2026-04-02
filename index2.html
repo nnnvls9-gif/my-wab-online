@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUTURE COMMERCE | ระบบร้านค้าอัจฉริยะ</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #05070a;
+            --card-bg: rgba(17, 25, 40, 0.75);
+            --accent-blue: #00d2ff;
+            --accent-purple: #9d50bb;
+            --text-white: #ffffff;
+            --text-gray: #a0aec0;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --success: #00f2fe;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-white);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(0, 210, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(157, 80, 187, 0.05) 0%, transparent 40%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.2rem 5%;
+            background: rgba(5, 7, 10, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-item {
+            cursor: pointer;
+            color: var(--text-gray);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--accent-blue);
+        }
+
+        .cart-icon-wrapper {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--accent-purple);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 50%;
+        }
+
+        /* Container */
+        .main-content {
+            margin-top: 100px;
+            padding: 2rem 5%;
+        }
+
+        /* Views */
+        .view { display: none; animation: fadeIn 0.5s ease; }
+        .view.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Product Cards */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.1);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-price {
+            color: var(--accent-blue);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .card-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .qty-input {
+            width: 60px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 5px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .checkbox-custom {
+            width: 24px;
+            height: 24px;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+        }
+
+        /* Modal / Popup */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: #0f172a;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .cart-item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
+            color: white;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.2);
+            transform: scale(1.02);
+        }
+
+        /* Admin/Form View */
+        .form-card {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-gray);
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            padding: 0.8rem;
+            border-radius: 12px;
+            color: white;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* Footer / Contact */
+        .contact-info {
+            margin-top: 4rem;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .line-btn {
+            background: #06C755;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* History Table */
+        .history-item {
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 1rem;
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+
+        #google_translate_element {
+            margin-right: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo" onclick="switchView('home')">FUTURE COMMERCE</div>
+        <div class="nav-links">
+            <div id="google_translate_element"></div>
+            <div class="nav-item active" onclick="switchView('home')"><i data-lucide="home"></i> หน้าแรก</div>
+            <div class="nav-item" onclick="switchView('shop')"><i data-lucide="shopping-bag"></i> สินค้า</div>
+            <div class="nav-item" onclick="switchView('admin')"><i data-lucide="settings"></i> จัดการ</div>
+            <div class="nav-item" onclick="switchView('history')"><i data-lucide="clock"></i> ประวัติ</div>
+            <div class="cart-icon-wrapper" onclick="openCart()">
+                <i data-lucide="shopping-cart"></i>
+                <span class="cart-count" id="cart-count">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        
+        <!-- Home View -->
+        <div id="view-home" class="view active">
+            <div style="text-align: center; padding: 4rem 0;">
+                <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem;">นวัตกรรมการช้อปปิ้งระดับพรีเมียม</h1>
+                <p style="color: var(--text-gray); font-size: 1.2rem; max-width: 700px; margin: 0 auto 2rem;">สัมผัสประสบการณ์การเลือกซื้อสินค้าที่รวดเร็ว ปลอดภัย และทันสมัยที่สุดในยุคดิจิทัล</p>
+                <button class="btn btn-primary" style="width: auto; padding: 1rem 3rem;" onclick="switchView('shop')">เข้าสู่ร้านค้า</button>
+            </div>
+        </div>
+
+        <!-- Shop View -->
+        <div id="view-shop" class="view">
+            <h2 style="margin-bottom: 2rem;">รายการสินค้าพรีเมียม</h2>
+            <div class="grid" id="product-grid">
+                <!-- Products will be injected here -->
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="view-admin" class="view">
+            <div class="form-card">
+                <h2 style="margin-bottom: 1.5rem;"><i data-lucide="plus-circle"></i> เพิ่มสินค้าใหม่</h2>
+                <div class="input-group">
+                    <label>ชื่อสินค้า</label>
+                    <input type="text" id="p-name" class="form-control" placeholder="ระบุชื่อสินค้า">
+                </div>
+                <div class="input-group">
+                    <label>ราคา (บาท)</label>
+                    <input type="number" id="p-price" class="form-control" placeholder="0.00">
+                </div>
+                <div class="input-group">
+                    <label>URL รูปภาพสินค้า</label>
+                    <input type="text" id="p-img" class="form-control" placeholder="https://images.unsplash.com/...">
+                </div>
+                <button class="btn btn-primary" onclick="addNewProduct()">บันทึกสินค้า</button>
+            </div>
+        </div>
+
+        <!-- Checkout View -->
+        <div id="view-checkout" class="view">
+            <div class="form-card">
+                <h2 style="margin-bottom: 1.5rem;">ยืนยันการจัดส่ง</h2>
+                <div id="checkout-summary" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                    <!-- Total will be here -->
+                </div>
+                <div class="input-group">
+                    <label>ชื่อ-นามสกุล ผู้ซื้อ</label>
+                    <input type="text" id="c-name" class="form-control">
+                </div>
+                <div class="input-group">
+                    <label>เบอร์โทรศัพท์</label>
+                    <input type="tel" id="c-tel" class="form-control">
+                </div>
+                <div class="input-group">
+                    <label>ที่อยู่การจัดส่ง</label>
+                    <textarea id="c-address" class="form-control" rows="4"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="confirmOrder()">ยืนยันสั่งซื้อ</button>
+            </div>
+        </div>
+
+        <!-- History View -->
+        <div id="view-history" class="view">
+            <h2 style="margin-bottom: 2rem;">ประวัติการสั่งซื้อของคุณ</h2>
+            <div id="history-container">
+                <!-- Orders will appear here -->
+            </div>
+        </div>
+
+        <!-- Success View -->
+        <div id="view-success" class="view" style="text-align: center; padding: 4rem 0;">
+            <i data-lucide="check-circle" size="80" color="#00f2fe"></i>
+            <h1 style="margin-top: 1.5rem;">การสั่งซื้อเสร็จสมบูรณ์!</h1>
+            <p style="color: var(--text-gray); margin: 1rem 0;">หมายเลขการสั่งซื้อของคุณคือ: <span id="order-id" style="color: var(--accent-blue); font-weight: 700;"></span></p>
+            <button class="btn btn-primary" style="width: auto; padding: 1rem 2rem;" onclick="switchView('home')">กลับสู่หน้าแรก</button>
+        </div>
+
+    </div>
+
+    <!-- Contact & Footer -->
+    <div class="contact-info">
+        <p style="color: var(--text-gray);">สอบถามข้อมูลเพิ่มเติมได้ที่ฝ่ายบริการลูกค้า</p>
+        <div class="social-links">
+            <a href="https://line.me" class="line-btn" target="_blank">
+                <i data-lucide="message-circle"></i> ID Line: @sincpl89_admin
+            </a>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="phone"></i> +66 80-473-2143
+            </div>
+        </div>
+        <p style="margin-top: 2rem; font-size: 0.8rem; color: var(--text-gray);">© 2023 FUTURE COMMERCE. All Rights Reserved.</p>
+    </div>
+
+    <!-- Cart Modal -->
+    <div class="modal" id="cart-modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3><i data-lucide="shopping-cart"></i> ตะกร้าสินค้าของคุณ</h3>
+                <i data-lucide="x" style="cursor: pointer;" onclick="closeCart()"></i>
+            </div>
+            <div id="cart-items-container">
+                <!-- Cart items list -->
+            </div>
+            <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.2rem;">
+                    <span>ราคาสุทธิ</span>
+                    <span id="cart-total" style="color: var(--accent-blue);">0.00 บาท</span>
+                </div>
+                <button class="btn btn-primary" onclick="goToCheckout()">ไปที่หน้าชำระเงิน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({pageLanguage: 'th', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <script>
+        // --- State Management ---
+        let products = JSON.parse(localStorage.getItem('f_products')) || [];
+        let cart = {}; // { productId: { qty, product } }
+        let orderHistory = JSON.parse(localStorage.getItem('f_orders')) || [];
+
+        // --- Mock Initial Data (100 items if empty) ---
+        if (products.length === 0) {
+            for (let i = 1; i <= 100; i++) {
+                products.push({
+                    id: 'p' + i,
+                    name: `Future Gadget Series ${i}`,
+                    price: Math.floor(Math.random() * 50000) + 1000,
+                    img: `https://picsum.photos/seed/${i+50}/400/300`
+                });
+            }
+            localStorage.setItem('f_products', JSON.stringify(products));
+        }
+
+        // --- View Controller ---
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            
+            const activeView = document.getElementById('view-' + viewName);
+            if (activeView) activeView.classList.add('active');
+            
+            // Highlight nav
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                if(item.innerText.includes(viewName === 'home' ? 'หน้าแรก' : viewName === 'shop' ? 'สินค้า' : '')) {
+                    item.classList.add('active');
+                }
+            });
+
+            if (viewName === 'shop') renderProducts();
+            if (viewName === 'history') renderHistory();
+            window.scrollTo(0,0);
+        }
+
+        // --- Product Logic ---
+        function renderProducts() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = products.map(p => {
+                const inCart = cart[p.id];
+                return `
+                    <div class="card">
+                        <img src="${p.img}" class="card-img" alt="${p.name}">
+                        <div class="card-body">
+                            <div class="card-title">${p.name}</div>
+                            <div class="card-price">฿${p.price.toLocaleString()}</div>
+                            <div class="card-controls">
+                                <input type="number" class="qty-input" value="${inCart ? inCart.qty : 1}" min="1" id="qty-${p.id}" onchange="updateQty('${p.id}')">
+                                <input type="checkbox" class="checkbox-custom" ${inCart ? 'checked' : ''} onchange="toggleCart('${p.id}')">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function toggleCart(id) {
+            if (cart[id]) {
+                delete cart[id];
+            } else {
+                const product = products.find(p => p.id === id);
+                const qty = parseInt(document.getElementById('qty-' + id).value) || 1;
+                cart[id] = { qty, product };
+            }
+            updateCartBadge();
+            renderProducts();
+        }
+
+        function updateQty(id) {
+            const qty = parseInt(document.getElementById('qty-' + id).value) || 1;
+            if (cart[id]) {
+                cart[id].qty = qty;
+                updateCartBadge();
+            }
+        }
+
+        function updateCartBadge() {
+            const totalItems = Object.values(cart).reduce((sum, item) => sum + item.qty, 0);
+            document.getElementById('cart-count').innerText = totalItems;
+        }
+
+        function addNewProduct() {
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const img = document.getElementById('p-img').value;
+
+            if (!name || !price) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+
+            const newP = {
+                id: 'p' + Date.now(),
+                name,
+                price: parseFloat(price),
+                img: img || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400'
+            };
+
+            products.unshift(newP);
+            localStorage.setItem('f_products', JSON.stringify(products));
+            alert("เพิ่มสินค้าสำเร็จ!");
+            switchView('shop');
+        }
+
+        // --- Cart Modal Logic ---
+        function openCart() {
+            const container = document.getElementById('cart-items-container');
+            const items = Object.values(cart);
+            
+            if (items.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: var(--text-gray); padding: 2rem;">ตะกร้าของคุณยังว่างเปล่า</p>`;
+            } else {
+                container.innerHTML = items.map(item => `
+                    <div class="cart-item-row">
+                        <div>
+                            <div style="font-weight:600">${item.product.name}</div>
+                            <div style="color: var(--text-gray); font-size: 0.85rem;">฿${item.product.price.toLocaleString()} x ${item.qty}</div>
+                        </div>
+                        <div style="font-weight: 700; color: var(--accent-blue);">฿${(item.product.price * item.qty).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            }
+
+            const total = items.reduce((sum, item) => sum + (item.product.price * item.qty), 0);
+            document.getElementById('cart-total').innerText = total.toLocaleString() + " บาท";
+            
+            document.getElementById('cart-modal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeCart() {
+            document.getElementById('cart-modal').classList.remove('active');
+        }
+
+        // --- Checkout Logic ---
+        function goToCheckout() {
+            if (Object.keys(cart).length === 0) return alert("กรุณาเลือกสินค้าก่อน!");
+            closeCart();
+            
+            const items = Object.values(cart);
+            const total = items.reduce((sum, item) => sum + (item.product.price * item.qty), 0);
+            document.getElementById('checkout-summary').innerHTML = `
+                <div style="display: flex; justify-content: space-between;">
+                    <span>จำนวนรายการ:</span>
+                    <span>${items.length} รายการ</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: 700; margin-top: 8px;">
+                    <span>ยอดรวมทั้งสิ้น:</span>
+                    <span style="color: var(--accent-blue);">฿${total.toLocaleString()}</span>
+                </div>
+            `;
+            switchView('checkout');
+        }
+
+        function confirmOrder() {
+            const name = document.getElementById('c-name').value;
+            const tel = document.getElementById('c-tel').value;
+            const address = document.getElementById('c-address').value;
+
+            if (!name || !tel || !address) return alert("กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน");
+
+            const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            const total = Object.values(cart).reduce((sum, item) => sum + (item.product.price * item.qty), 0);
+            
+            const order = {
+                id: orderId,
+                customer: name,
+                date: new Date().toLocaleString('th-TH'),
+                total: total,
+                items: Object.values(cart).map(i => ({ name: i.product.name, qty: i.qty }))
+            };
+
+            orderHistory.unshift(order);
+            localStorage.setItem('f_orders', JSON.stringify(orderHistory));
+            
+            document.getElementById('order-id').innerText = orderId;
+            cart = {}; // Clear cart
+            updateCartBadge();
+            switchView('success');
+        }
+
+        // --- History Logic ---
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            if (orderHistory.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: var(--text-gray); padding: 4rem;">คุณยังไม่มีประวัติการสั่งซื้อ</p>`;
+                return;
+            }
+
+            container.innerHTML = orderHistory.map(ord => `
+                <div class="history-item">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                        <span style="color: var(--accent-blue); font-weight: 700;">#${ord.id}</span>
+                        <span style="font-size: 0.85rem; color: var(--text-gray);">${ord.date}</span>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;"><strong>ผู้ซื้อ:</strong> ${ord.customer}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-gray); margin-bottom: 1rem;">
+                        ${ord.items.map(i => i.name + ' (x' + i.qty + ')').join(', ')}
+                    </div>
+                    <div style="text-align: right; font-size: 1.1rem; font-weight: 700; color: var(--success);">
+                        ยอดสุทธิ: ฿${ord.total.toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Init icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
