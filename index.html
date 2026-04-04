@@ -1,0 +1,515 @@
+DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Store Pro - ระบบจัดการรถยนต์และประวัติการจอง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
+        body { font-family: 'Kanit', sans-serif; scroll-behavior: smooth; }
+        .product-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+        .modal { display: none; }
+        .active-modal { display: flex !important; }
+        .admin-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .ticker-container { overflow: hidden; white-space: nowrap; }
+        .ticker-text { display: inline-block; animation: ticker 50s linear infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Top Announcement -->
+    <div class="bg-green-600 text-white py-1.5 ticker-container relative z-[70]">
+        <div class="ticker-text text-sm font-medium">
+            🚀 ยินดีต้อนรับสู่ EV Store Pro ระบบจัดการรถยนต์ไฟฟ้าครบวงจร | 📞 ติดต่อแอดมินด่วน LINE: sincpl89 | ⚡️ โปรโมชั่นพิเศษสำหรับสมาชิกใหม่ รับฟรีบัตรชาร์จไฟ 5,000 บาท | 📦 มีรถพร้อมส่งมากกว่า 50 รุ่นทั่วประเทศ!
+        </div>
+    </div>
+
+    <!-- Admin Top Bar -->
+    <div class="admin-gradient text-white py-3 px-6 flex flex-wrap justify-between items-center shadow-xl sticky top-0 z-[60] gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-500 p-2 rounded-xl shadow-lg shadow-blue-500/20">
+                <i class="fas fa-chart-line text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-none">รถยนต์ไฟฟ้า มือสอง (EV ) ซื้อ ขาย</h1>
+                <p class="text-[10px] text-blue-300 uppercase tracking-tighter mt-1">Enterprise Inventory Control</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="toggleAdminModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 shadow-lg">
+                <i class="fas fa-plus-circle"></i> เพิ่มรถใหม่
+            </button>
+            <button onclick="toggleHistoryModal()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 border border-slate-600">
+                <i class="fas fa-history"></i> ประวัติการจอง
+            </button>
+            <button onclick="resetToDefault()" class="bg-red-900/30 hover:bg-red-900/50 text-red-200 px-4 py-2 rounded-lg text-sm font-bold transition border border-red-800/30">
+                รีเซ็ตข้อมูล
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Navigation -->
+    <nav class="bg-white/80 backdrop-blur-md border-b sticky top-[68px] md:top-[60px] z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center text-2xl font-black text-slate-900 tracking-tighter">
+                <span class="text-blue-600">EV</span>STORE<span class="text-blue-600">.</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden lg:flex items-center bg-green-50 px-4 py-1.5 rounded-full border border-green-100">
+                    <i class="fab fa-line text-xl text-green-600 mr-2"></i>
+                    <span class="text-green-700 font-bold text-sm">sincpl89</span>
+                </div>
+                <button onclick="toggleCart()" class="relative p-2.5 bg-slate-100 rounded-full hover:bg-blue-50 transition text-slate-600 hover:text-blue-600">
+                    <i class="fas fa-shopping-basket text-xl"></i>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white font-bold">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-12">
+        <div class="mb-12">
+            <h2 class="text-4xl font-black text-slate-900 mb-2">Inventory <span class="text-blue-600">List</span></h2>
+            <p class="text-slate-500 font-medium">แสดงรายการรถยนต์ทั้งหมดในคลัง (<span id="total-items">0</span> รุ่น)</p>
+            <div class="h-1.5 w-20 bg-blue-600 rounded-full mt-4"></div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="mb-8 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+            <div class="relative flex-1 w-full">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="search-input" oninput="filterProducts()" placeholder="ค้นหารุ่นรถ หรือยี่ห้อ..." class="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl outline-none border border-transparent focus:border-blue-500 transition">
+            </div>
+            <select id="sort-select" onchange="filterProducts()" class="w-full md:w-48 p-3 bg-slate-50 rounded-xl outline-none border border-transparent focus:border-blue-500 font-bold text-slate-600">
+                <option value="newest">รุ่นใหม่ล่าสุด</option>
+                <option value="price-asc">ราคา: ต่ำ - สูง</option>
+                <option value="price-desc">ราคา: สูง - ต่ำ</option>
+            </select>
+        </div>
+
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Products injected here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col items-center">
+            <div class="flex gap-6 mb-8">
+                <a href="#" class="text-slate-400 hover:text-blue-600 text-2xl transition"><i class="fab fa-facebook"></i></a>
+                <a href="https://line.me/ti/p/~sincpl89" target="_blank" class="text-slate-400 hover:text-green-500 text-2xl transition"><i class="fab fa-line"></i></a>
+                <a href="#" class="text-slate-400 hover:text-pink-500 text-2xl transition"><i class="fab fa-instagram"></i></a>
+            </div>
+            <p class="text-slate-400 text-sm font-medium">© 2023 EV Store Enterprise System - LINE: sincpl89</p>
+        </div>
+    </footer>
+
+    <!-- MODAL: Admin Product Form -->
+    <div id="admin-modal" class="modal fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden">
+            <div class="p-8 admin-gradient text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-2xl font-bold" id="modal-title">เพิ่มรถยนต์รุ่นใหม่</h3>
+                    <p class="text-blue-300 text-xs mt-1 uppercase tracking-widest">Database entry</p>
+                </div>
+                <button onclick="toggleAdminModal()" class="bg-white/10 w-10 h-10 rounded-full hover:bg-white/20 transition flex items-center justify-center"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="product-form" class="p-8 space-y-5" onsubmit="saveProduct(event)">
+                <input type="hidden" id="edit-id">
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 ml-1">ชื่อยี่ห้อและรุ่นรถ</label>
+                    <input type="text" id="p-name" required placeholder="เช่น Tesla Model Y" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-slate-700 ml-1">ราคา (บาท)</label>
+                        <input type="number" id="p-price" required placeholder="1,500,000" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-slate-700 ml-1">สต็อก (คัน)</label>
+                        <input type="number" id="p-stock" required value="10" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 ml-1">ลิงก์รูปภาพ (URL)</label>
+                    <input type="url" id="p-img" placeholder="https://images.unsplash.com/..." class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="submit" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">บันทึกข้อมูลเข้าคลัง</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Order History -->
+    <div id="history-modal" class="modal fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] items-center justify-center p-4">
+        <div class="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-8 border-b flex justify-between items-center">
+                <div>
+                    <h3 class="text-2xl font-bold">ประวัติการสั่งจองล่าสุด</h3>
+                    <p class="text-slate-400 text-sm">รายการที่ลูกค้าส่งเรื่องเข้ามาทั้งหมด</p>
+                </div>
+                <button onclick="toggleHistoryModal()" class="bg-slate-100 w-10 h-10 rounded-full hover:bg-slate-200 transition flex items-center justify-center text-slate-400"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="history-content" class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <!-- History list injected here -->
+            </div>
+            <div class="p-6 bg-slate-50 border-t flex justify-center">
+                <button onclick="clearHistory()" class="text-red-500 text-sm font-bold hover:underline">ล้างประวัติทั้งหมด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Cart & Checkout -->
+    <div id="cart-modal" class="modal fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="p-8 border-b flex justify-between items-center">
+                <h3 class="text-2xl font-bold">ตะกร้าการจอง</h3>
+                <button onclick="toggleCart()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div id="cart-items" class="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
+                <!-- Cart items here -->
+            </div>
+            <div class="p-8 bg-slate-50 border-t space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase ml-1">ชื่อผู้ติดต่อ</label>
+                        <input type="text" id="cust-name" placeholder="ชื่อ-นามสกุล" class="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase ml-1">เบอร์โทรศัพท์ติดต่อ</label>
+                        <input type="tel" id="cust-phone" placeholder="08x-xxx-xxxx" class="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium">
+                    </div>
+                </div>
+                <div class="flex justify-between items-center border-t border-slate-200 pt-6">
+                    <span class="text-slate-500 font-bold">ยอดรวมสุทธิ:</span>
+                    <span id="cart-total" class="text-3xl font-black text-blue-600">฿0</span>
+                </div>
+                <button onclick="processCheckout()" id="checkout-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-200">
+                    ยืนยันการจอง & แจ้งแอดมิน (sincpl89)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Setup
+        const brands = ["Tesla", "BYD", "BMW", "MG", "GWM", "Volvo", "Neta", "Aion", "Deepal", "Omoda"];
+        const models = ["Model 3", "Model Y", "Seal", "Atto 3", "i4", "iX3", "4 Electric", "ZS EV", "Ora Good Cat", "Ora 07", "XC40", "C40", "V", "Y Plus", "S07", "L07", "E5", "C5"];
+        const placeholderImgs = [
+            "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500",
+            "https://images.unsplash.com/photo-1617469767053-d3b508a042a2?w=500",
+            "https://images.unsplash.com/photo-1698292862804-0320498b7923?w=500",
+            "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=500",
+            "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=500"
+        ];
+
+        // Generator for 50+ items
+        function generateInitialData() {
+            let data = [];
+            for(let i=1; i<=52; i++) {
+                const brand = brands[Math.floor(Math.random() * brands.length)];
+                const model = models[Math.floor(Math.random() * models.length)];
+                data.push({
+                    id: i,
+                    name: `${brand} ${model} Edition ${i}`,
+                    price: Math.floor(Math.random() * (4000000 - 800000) + 800000),
+                    stock: Math.floor(Math.random() * 20) + 1,
+                    img: placeholderImgs[Math.floor(Math.random() * placeholderImgs.length)],
+                    createdAt: Date.now() - (i * 3600000) // fake timing
+                });
+            }
+            return data;
+        }
+
+        // State Management
+        let products = JSON.parse(localStorage.getItem('ev_pro_products')) || generateInitialData();
+        let orders = JSON.parse(localStorage.getItem('ev_pro_orders')) || [];
+        let cart = [];
+
+        // Save functions
+        const saveAll = () => {
+            localStorage.setItem('ev_pro_products', JSON.stringify(products));
+            localStorage.setItem('ev_pro_orders', JSON.stringify(orders));
+        };
+
+        // UI Helpers
+        const formatPrice = (num) => "฿" + Number(num).toLocaleString();
+
+        // Rendering Engine
+        function filterProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const sort = document.getElementById('sort-select').value;
+            
+            let filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            
+            if (sort === 'price-asc') filtered.sort((a, b) => a.price - b.price);
+            else if (sort === 'price-desc') filtered.sort((a, b) => b.price - a.price);
+            else filtered.sort((a, b) => b.createdAt - a.createdAt);
+
+            renderGrid(filtered);
+        }
+
+        function renderGrid(dataList) {
+            const grid = document.getElementById('product-grid');
+            document.getElementById('total-items').innerText = dataList.length;
+            
+            if (dataList.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center">
+                    <i class="fas fa-search text-5xl text-slate-200 mb-4"></i>
+                    <p class="text-slate-400">ไม่พบรายการที่คุณค้นหา</p>
+                </div>`;
+                return;
+            }
+
+            grid.innerHTML = dataList.map(p => `
+                <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden product-card flex flex-col group">
+                    <div class="relative h-48 overflow-hidden">
+                        <img src="${p.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-4 right-4 flex gap-2">
+                            <button onclick="editProduct(${p.id})" class="w-9 h-9 bg-white/20 backdrop-blur rounded-full text-white hover:bg-white hover:text-blue-600 transition flex items-center justify-center shadow-lg"><i class="fas fa-edit text-sm"></i></button>
+                            <button onclick="deleteProduct(${p.id})" class="w-9 h-9 bg-white/20 backdrop-blur rounded-full text-white hover:bg-red-500 transition flex items-center justify-center shadow-lg"><i class="fas fa-trash text-sm"></i></button>
+                        </div>
+                        <div class="absolute bottom-4 left-4">
+                            <span class="text-[10px] font-black text-white bg-blue-600 px-2 py-0.5 rounded uppercase tracking-widest">STOCK: ${p.stock}</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col">
+                        <h3 class="font-bold text-lg text-slate-800 leading-tight mb-1">${p.name}</h3>
+                        <p class="text-blue-600 font-black text-xl mb-6">${formatPrice(p.price)}</p>
+                        
+                        <div class="mt-auto space-y-2">
+                            <div class="flex items-center gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                                <button onclick="adjQty(${p.id}, -1)" class="w-10 h-10 bg-white rounded-lg shadow-sm font-bold hover:bg-slate-100 transition">-</button>
+                                <input type="number" id="qty-${p.id}" value="1" min="1" max="${p.stock}" class="flex-1 text-center bg-transparent font-bold outline-none">
+                                <button onclick="adjQty(${p.id}, 1)" class="w-10 h-10 bg-white rounded-lg shadow-sm font-bold hover:bg-slate-100 transition">+</button>
+                            </div>
+                            <button onclick="addToCart(${p.id})" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-blue-600 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-plus"></i> จองรุ่นนี้
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Inventory Handlers
+        function toggleAdminModal() {
+            const m = document.getElementById('admin-modal');
+            const f = document.getElementById('product-form');
+            if(!m.classList.contains('active-modal')) {
+                f.reset();
+                document.getElementById('edit-id').value = '';
+                document.getElementById('modal-title').innerText = 'เพิ่มรถยนต์รุ่นใหม่';
+            }
+            m.classList.toggle('active-modal');
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                id: id ? Number(id) : Date.now(),
+                name: document.getElementById('p-name').value,
+                price: Number(document.getElementById('p-price').value),
+                stock: Number(document.getElementById('p-stock').value),
+                img: document.getElementById('p-img').value || placeholderImgs[0],
+                createdAt: id ? products.find(p => p.id == id).createdAt : Date.now()
+            };
+
+            if(id) {
+                const idx = products.findIndex(p => p.id == id);
+                products[idx] = data;
+            } else {
+                products.unshift(data);
+            }
+            
+            saveAll();
+            filterProducts();
+            toggleAdminModal();
+        }
+
+        function editProduct(id) {
+            const p = products.find(p => p.id == id);
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-price').value = p.price;
+            document.getElementById('p-stock').value = p.stock;
+            document.getElementById('p-img').value = p.img;
+            document.getElementById('modal-title').innerText = 'แก้ไขข้อมูลรถ';
+            document.getElementById('admin-modal').classList.add('active-modal');
+        }
+
+        function deleteProduct(id) {
+            if(confirm('ยืนยันการลบรายการรถยนต์นี้?')) {
+                products = products.filter(p => p.id != id);
+                saveAll();
+                filterProducts();
+            }
+        }
+
+        function resetToDefault() {
+            if(confirm('ล้างข้อมูลทั้งหมดและใช้ข้อมูลเริ่มต้น 50 รายการ?')) {
+                products = generateInitialData();
+                orders = [];
+                saveAll();
+                location.reload();
+            }
+        }
+
+        // Cart Handlers
+        function adjQty(id, delta) {
+            const el = document.getElementById(`qty-${id}`);
+            let v = parseInt(el.value) + delta;
+            if(v < 1) v = 1;
+            el.value = v;
+        }
+
+        function addToCart(id) {
+            const qty = parseInt(document.getElementById(`qty-${id}`).value);
+            const p = products.find(p => p.id == id);
+            
+            const exist = cart.find(item => item.id == id);
+            if(exist) exist.qty += qty;
+            else cart.push({ ...p, qty });
+            
+            updateCartUI();
+            document.getElementById(`qty-${id}`).value = 1;
+        }
+
+        function updateCartUI() {
+            const count = cart.reduce((s, i) => s + i.qty, 0);
+            const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            document.getElementById('cart-count').innerText = count;
+            document.getElementById('cart-total').innerText = formatPrice(total);
+            
+            const container = document.getElementById('cart-items');
+            if(cart.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-400">ตะกร้าว่างเปล่า</div>`;
+                document.getElementById('checkout-btn').disabled = true;
+            } else {
+                container.innerHTML = cart.map((item, idx) => `
+                    <div class="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-100">
+                        <img src="${item.img}" class="w-20 h-16 object-cover rounded-lg">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-xs leading-tight">${item.name}</h4>
+                            <p class="text-blue-600 text-xs font-black">${formatPrice(item.price)} x ${item.qty}</p>
+                        </div>
+                        <button onclick="removeFromCart(${idx})" class="text-red-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `).join('');
+                document.getElementById('checkout-btn').disabled = false;
+            }
+        }
+
+        function removeFromCart(idx) {
+            cart.splice(idx, 1);
+            updateCartUI();
+        }
+
+        function toggleCart() {
+            document.getElementById('cart-modal').classList.toggle('active-modal');
+        }
+
+        // Checkout & History Handlers
+        function toggleHistoryModal() {
+            renderHistory();
+            document.getElementById('history-modal').classList.toggle('active-modal');
+        }
+
+        function processCheckout() {
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+
+            if(!name || !phone) {
+                alert('กรุณากรอกชื่อและเบอร์โทรศัพท์เพื่อใช้ในการจอง');
+                return;
+            }
+
+            const newOrder = {
+                orderId: 'EV-' + Date.now().toString().slice(-6),
+                customer: name,
+                phone: phone,
+                items: [...cart],
+                total: cart.reduce((s, i) => s + (i.price * i.qty), 0),
+                timestamp: new Date().toLocaleString('th-TH'),
+                status: 'รอดำเนินการ'
+            };
+
+            orders.unshift(newOrder);
+            saveAll();
+
+            // Line Redirect with New ID: sincpl89
+            let msg = `🛒 *รายการจองใหม่ - ${newOrder.orderId}*\n👤 ชื่อ: ${name}\n📞 เบอร์โทร: ${phone}\n\n`;
+            cart.forEach(i => msg += `🚗 ${i.name} (${i.qty} คัน)\n`);
+            msg += `\n💰 รวมทั้งสิ้น: ${formatPrice(newOrder.total)}`;
+            
+            const link = `https://line.me/ti/p/~sincpl89?text=${encodeURIComponent(msg)}`;
+            window.open(link, '_blank');
+
+            // Reset
+            cart = [];
+            document.getElementById('cust-name').value = '';
+            document.getElementById('cust-phone').value = '';
+            updateCartUI();
+            toggleCart();
+            alert('บันทึกข้อมูลการจองเรียบร้อยแล้ว แอดมินจะติดต่อกลับโดยเร็วที่สุด');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-content');
+            if(orders.length === 0) {
+                container.innerHTML = `<div class="text-center py-20 text-slate-300">ไม่พบประวัติการจอง</div>`;
+                return;
+            }
+
+            container.innerHTML = orders.map(o => `
+                <div class="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] mb-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <span class="text-[10px] font-black bg-slate-200 px-2 py-0.5 rounded text-slate-600 uppercase tracking-widest">${o.orderId}</span>
+                            <h4 class="font-bold text-lg mt-1">${o.customer}</h4>
+                            <p class="text-blue-600 font-bold"><i class="fas fa-phone-alt text-xs mr-1"></i> ${o.phone}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-400 mb-1">${o.timestamp}</p>
+                            <span class="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold">${o.status}</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-200 pt-4 space-y-2">
+                        ${o.items.map(i => `<div class="text-xs flex justify-between"><span>${i.name} x ${i.qty}</span> <span class="font-bold">${formatPrice(i.price * i.qty)}</span></div>`).join('')}
+                        <div class="border-t border-dashed border-slate-300 pt-2 flex justify-between font-black text-sm text-slate-900">
+                            <span>รวมทั้งหมด</span>
+                            <span>${formatPrice(o.total)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() {
+            if(confirm('ล้างประวัติการสั่งจองทั้งหมด?')) {
+                orders = [];
+                saveAll();
+                renderHistory();
+            }
+        }
+
+        // Init
+        filterProducts();
+        updateCartUI();
+    </script>
+</body>
+</html>
